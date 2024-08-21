@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { db } from './firebase';
-import { collection, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { db, auth } from './firebase';
+import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import './app.css'
 
 function App() {
@@ -8,6 +9,30 @@ function App() {
   const [autor, setAutor] = useState('');
   const [idPost, setIdPost] = useState('');
   const [post, setPost] = useState([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+
+  useEffect(() => {
+    async function loadPost() {
+      const unsub = onSnapshot(collection(db, 'post'), (snapshot) => {
+        let listaPost = [];
+
+        snapshot.forEach((doc) => {
+          listaPost.push({
+            id: doc.id,
+            titulo: doc.data().titulo,
+            autor: doc.data().autor
+          })
+        })
+
+        setPost(listaPost);
+      })
+    }
+
+    loadPost();
+
+  }, [])
 
   async function buscarPost() {
 
@@ -79,10 +104,36 @@ function App() {
       setIdPost('');
       setAutor('');
       setTitulo('');
-      buscarPost();
     })
     .catch((error) => {
       console.log(error)
+    })
+  }
+
+  async function excluirPost(id) {
+    const docRef = doc(db, 'post', id)
+    await deleteDoc(docRef)
+    .then(() => {
+      console.log('Post excluido!')
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
+  async function newUser() {
+    await createUserWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      console.log('Usuário cadastrado')
+      setEmail('');
+      setPassword('');
+    })
+    .catch((error) => {
+      if(error.code === "auth/weak-password") {
+        alert('Senha muito fraco!')
+      } else if(error.code === "auth/email-already-in-use") {
+        alert("E-mail já cadastrado")
+      }
     })
   }
 
@@ -91,6 +142,25 @@ function App() {
       <h1>ReactJs + Firebase</h1>
 
       <div className='container'>
+
+        <h2>Usuários</h2> 
+
+        <label>E-mail</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Digite um e-mail'/> <br />
+
+        <label>Password</label>
+        <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Digite uma senha'/> <br />
+
+        <button onClick={newUser}>Cadastrar</button>
+
+      </div>
+
+      <br /> <br />
+      <hr/>
+
+      <div className='container'>
+
+        <h2>Postagens</h2> 
 
         <label>ID: </label>
         <input placeholder='Digite o ID do post' value={idPost} onChange={(e) => setIdPost(e.target.value)} /> <br />
@@ -111,7 +181,8 @@ function App() {
               <li key={post.id}>
                 <strong>ID: {post.id}</strong> <br/>
                 <span>Titulo: {post.titulo}</span> <br/>
-                <span>Autor: {post.autor}</span> <br/> <br/>
+                <span>Autor: {post.autor}</span> <br/>
+                <button onClick={ () => excluirPost(post.id) }>Excluir</button> <br/> <br/>  
               </li>
             )
           })}
