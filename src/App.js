@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebase';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import './app.css'
 
 function App() {
@@ -13,7 +13,6 @@ function App() {
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(false);
   const [userDetail, setUserDetail] = useState({});
-
 
   useEffect(() => {
     async function loadPost() {
@@ -33,6 +32,26 @@ function App() {
     }
 
     loadPost();
+
+  }, [])
+
+  useEffect(() => {
+    async function checkLogin() {
+      onAuthStateChanged(auth, (user) => {
+        if(user){
+          setUser(true);
+          setUserDetail({
+            uid: user.uid,
+            email: user.email
+          });
+        } else {
+          setUser(false);
+          setUserDetail({});
+        }
+      })
+    }
+
+    checkLogin();
 
   }, [])
 
