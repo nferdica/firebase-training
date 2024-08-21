@@ -1,24 +1,44 @@
 import { useState } from 'react';
 import { db } from './firebase';
-import { doc, collection, addDoc, getDoc } from 'firebase/firestore';
+import { doc, collection, addDoc, getDoc, getDocs} from 'firebase/firestore';
 import './app.css'
 
 function App() {
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
+  const [post, setPost] = useState([]);
 
   async function buscarPost() {
 
-    const postRef = doc(db, 'post', '1');
+  //  const postRef = doc(db, 'post', '1');
 
-    await getDoc(postRef)
+  //  await getDoc(postRef)
+  //  .then((snapshot) => {
+  //    setAutor(snapshot.data().autor)
+  //   setTitulo(snapshot.data().titulo)
+  //  })
+  //  .catch((error) => [
+  //    console.log(error)
+  // ])
+
+    const postRef = collection(db, 'post')
+    await getDocs(postRef)
     .then((snapshot) => {
-      setAutor(snapshot.data().autor)
-      setTitulo(snapshot.data().titulo)
+      let lista = [];
+      snapshot.forEach((doc) => {
+        lista.push({
+          id: doc.id,
+          titulo: doc.data().titulo,
+          autor: doc.data().autor
+        })
+      })
+
+      setPost(lista);
+
     })
-    .catch((error) => [
+    .catch((error) => {
       console.log(error)
-    ])
+    })
 
   }
   
@@ -62,6 +82,17 @@ function App() {
 
         <button onClick={handleAdd}>Cadastrar</button>
         <button onClick={buscarPost}>Buscar post</button>
+
+        <ul>
+          {post.map((post) => {
+            return(
+              <li key={post.id}>
+                <span>Titulo: {post.titulo}</span> <br/>
+                <span>Autor: {post.autor}</span> <br/> <br/>
+              </li>
+            )
+          })}
+        </ul>
 
       </div>
     </div>
